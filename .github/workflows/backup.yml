@@ -21,3 +21,34 @@ jobs:
 
       - name: Create ZIP
         run: zip -r mc-backup.zip backup
+
+      - name: Upload to Google Drive
+        run: |
+          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > creds.json
+          pip install --upgrade google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
+
+          python3 << 'EOF'
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+from google.oauth2 import service_account
+
+SCOPES = ['https://www.googleapis.com/auth/drive.file']
+creds = service_account.Credentials.from_service_account_file('creds.json', scopes=SCOPES)
+
+service = build('drive', 'v3', credentials=creds)
+
+file_metadata = {
+    'name': 'mc-backup.zip',
+    'parents': ['${{ secrets.GDRIVE_FOLDER_ID }}']
+}
+
+media = MediaFileUpload('mc-backup.zip', mimetype='application/zip')
+
+file = service.files().create(
+    body=file_metadata,
+    media_body=media,
+    fields='id'
+).execute()
+
+print("Uploaded File ID:", file.get('id'))
+EOF
