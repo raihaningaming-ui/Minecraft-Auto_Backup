@@ -16,7 +16,7 @@ jobs:
       - name: Download world from server
         run: |
           mkdir backup
-          sshpass -p "${{ secrets.SFTP_PASS }}" scp -o StrictHostKeyChecking=no -r \
+          sshpass -p "${{ secrets.SFTP_PASS }}" scp -P 2022 -o StrictHostKeyChecking=no -r \
           ${{ secrets.SFTP_USER }}@${{ secrets.SFTP_HOST }}:/world ./backup/
 
       - name: Create ZIP
