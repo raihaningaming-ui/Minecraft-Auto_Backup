@@ -1,4 +1,4 @@
-name: MC Auto Backup
+name: Minecraft Auto Backup
 
 on:
   schedule:
@@ -26,60 +26,4 @@ jobs:
         run: |
           echo '${{ secrets.GOOGLE_CREDENTIALS }}' > creds.json
           pip install google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
-
-          python3 << 'EOF'
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
-from google.oauth2 import service_account
-
-SCOPES = ['https://www.googleapis.com/auth/drive.file']
-creds = service_account.Credentials.from_service_account_file('creds.json', scopes=SCOPES)
-
-service = build('drive', 'v3', credentials=creds)
-
-file_metadata = {
-    'name': 'mc-backup.zip',
-    'parents': ['${{ secrets.GDRIVE_FOLDER_ID }}']
-}
-
-media = MediaFileUpload('mc-backup.zip', mimetype='application/zip')
-
-file = service.files().create(
-    body=file_metadata,
-    media_body=media,
-    fields='id'
-).execute()
-
-print("Uploaded:", file.get('id'))
-EOF
-
-      - name: Delete old backups (7 days)
-        run: |
-          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > creds.json
-          pip install google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
-
-          python3 << 'EOF'
-from googleapiclient.discovery import build
-from google.oauth2 import service_account
-from datetime import datetime, timedelta
-
-SCOPES = ['https://www.googleapis.com/auth/drive']
-creds = service_account.Credentials.from_service_account_file('creds.json', scopes=SCOPES)
-
-service = build('drive', 'v3', credentials=creds)
-
-folder_id = '${{ secrets.GDRIVE_FOLDER_ID }}'
-
-results = service.files().list(
-    q=f"'{folder_id}' in parents",
-    fields="files(id, name, createdTime)"
-).execute()
-
-files = results.get('files', [])
-
-for f in files:
-    created = datetime.fromisoformat(f['createdTime'].replace('Z',''))
-    if datetime.utcnow() - created > timedelta(days=7):
-        service.files().delete(fileId=f['id']).execute()
-        print("Deleted:", f['name'])
-EOF
+          python3 upload.py
