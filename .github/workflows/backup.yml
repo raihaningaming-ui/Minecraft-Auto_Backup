@@ -1,4 +1,4 @@
-name: Minecraft Auto Backup
+name: MC Auto Backup
 
 on:
   schedule:
@@ -25,7 +25,7 @@ jobs:
       - name: Upload to Google Drive
         run: |
           echo '${{ secrets.GOOGLE_CREDENTIALS }}' > creds.json
-          pip install --upgrade google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
+          pip install google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
 
           python3 << 'EOF'
 from googleapiclient.discovery import build
@@ -50,7 +50,7 @@ file = service.files().create(
     fields='id'
 ).execute()
 
-print("Uploaded File ID:", file.get('id'))
+print("Uploaded:", file.get('id'))
 EOF
 
       - name: Delete old backups (7 days)
